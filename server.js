@@ -74,7 +74,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// ✅ Login API
+// ✅ Login API (Updates last_login on every login)
 app.post("/login", async (req, res) => {
   try {
     const { mobile_number } = req.body;
@@ -85,6 +85,9 @@ app.post("/login", async (req, res) => {
 
     if (!user) return res.status(404).json({ error: "User not found. Please sign up." });
 
+    // Update last_login timestamp
+    await supabase.from("users").update({ last_login: new Date() }).eq("id", user.id);
+
     const token = generateToken(user);
     return res.json({ message: "Login successful", token, user });
   } catch (error) {
@@ -92,6 +95,7 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 // ✅ Get User Details (Protected)
 app.get("/user", authenticateToken, async (req, res) => {
@@ -169,6 +173,37 @@ app.delete("/address/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// ✅ Delete Inactive Users (Runs Every Week)
+const cleanupInactiveUsers = async () => {
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+  const { data: inactiveUsers, error } = await supabase
+    .from("users")
+    .select("id")
+    .lt("last_login", threeMonthsAgo.toISOString());
+
+  if (error) {
+    console.error("Error fetching inactive users:", error);
+    return;
+  }
+
+  if (inactiveUsers.length > 0) {
+    const userIds = inactiveUsers.map(user => user.id);
+
+    // Delete addresses first (since they reference users)
+    await supabase.from("addresses").delete().in("user_id", userIds);
+
+    // Delete users
+    await supabase.from("users").delete().in("id", userIds);
+
+    console.log(`Deleted ${inactiveUsers.length} inactive users.`);
+  }
+};
+
+// ✅ Run cleanup every week
+setInterval(cleanupInactiveUsers, 168 * 60 * 60 * 1000);
 
 // ✅ Handle Preflight Requests for CORS (OPTION Method)
 app.options("*", cors());

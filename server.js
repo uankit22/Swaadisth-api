@@ -173,7 +173,10 @@ app.delete("/address/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-// Newslater Route
+
+
+
+// Newsletter Route
 app.post("/subscribe", async (req, res) => {
   const { email } = req.body;
 
@@ -184,7 +187,7 @@ app.post("/subscribe", async (req, res) => {
   try {
     // Check if email already exists
     const { data: existingEmail, error: checkError } = await supabase
-      .from("news_later")
+      .from("news_letter")
       .select("email")
       .eq("email", email)
       .single();
@@ -195,7 +198,7 @@ app.post("/subscribe", async (req, res) => {
 
     // Insert new email
     const { error: insertError } = await supabase
-      .from("news_later")
+      .from("news_letter")
       .insert([{ email }]);
 
     if (insertError) {

@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { createClient } = require("@supabase/supabase-js");
 
@@ -7,6 +8,15 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(express.json());
+
+// ✅ Configure CORS
+app.use(
+  cors({
+    origin: "https://v0-swaadishta-wt.vercel.app", // Allow frontend domain
+    methods: "GET, POST, PUT, DELETE, OPTIONS",
+    allowedHeaders: "Content-Type, Authorization",
+  })
+);
 
 // Supabase Connection
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -160,7 +170,10 @@ app.delete("/address/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// ✅ Handle Preflight Requests for CORS (OPTION Method)
+app.options("*", cors());
+
 // Start Server
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on Render:${port}`);
 });

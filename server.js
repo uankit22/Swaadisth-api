@@ -173,6 +173,42 @@ app.delete("/address/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+// Newslater Route
+app.post("/subscribe", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  try {
+    // Check if email already exists
+    const { data: existingEmail, error: checkError } = await supabase
+      .from("news_later")
+      .select("email")
+      .eq("email", email)
+      .single();
+
+    if (existingEmail) {
+      return res.status(409).json({ message: "Already subscribed" });
+    }
+
+    // Insert new email
+    const { error: insertError } = await supabase
+      .from("news_later")
+      .insert([{ email }]);
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    return res.status(201).json({ message: "Subscribed successfully" });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 
 // ✅ Delete Inactive Users (Runs Every Week)
 const cleanupInactiveUsers = async () => {

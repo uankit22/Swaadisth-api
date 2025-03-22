@@ -17,7 +17,6 @@ app.use(
     allowedHeaders: "Content-Type, Authorization",
   })
 );
-
 // Supabase Connection
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -209,6 +208,21 @@ app.post("/subscribe", async (req, res) => {
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
+// ✅ Fetch All Coupons
+app.get("/coupons", async (req, res) => {
+  try {
+    let { data: coupons, error } = await supabase.from("coupons").select("*");
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({ coupons });
+  } catch (error) {
+    console.error("Error fetching coupons:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
